@@ -10,6 +10,8 @@ captcha is shown; if the captcha appears it gives up immediately (never
 hammers the account) and tells you to run bot.login once.
 """
 
+from __future__ import annotations
+
 import logging
 
 log = logging.getLogger("wohnungsbot")

@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 DIR="$(pwd)"
 PLIST="$HOME/Library/LaunchAgents/com.wohnungsbot.goettingen.plist"
 
-mkdir -p "$HOME/Library/LaunchAgents"
+mkdir -p "$DIR/data" "$HOME/Library/LaunchAgents"
 sed "s#__BOT_DIR__#$DIR#g" com.wohnungsbot.goettingen.plist.template > "$PLIST"
 launchctl unload "$PLIST" 2>/dev/null || true
 launchctl load "$PLIST"
