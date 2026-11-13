@@ -5,7 +5,9 @@ Server-rendered, kein Schutz. Stellplätze/Garagen werden übersprungen.
 
 from bs4 import BeautifulSoup
 
+from ..dates import json_ld_dates, newest_first, publication_date
 from ..models import Listing
+from ..money import parse_euro_amount
 from .base import BaseScraper, clean, parse_rooms
 
 URL = "https://wg-goe.de/wohnungsangebote/"
@@ -15,9 +17,11 @@ SKIP_WORDS = ("parken", "stellplatz", "garage", "fahrrad")
 
 class WgEg(BaseScraper):
     name = "wg_eg"
+    local_to = "Göttingen"
 
     def fetch(self, browser=None) -> list[Listing]:
         soup = BeautifulSoup(self.get(URL).text, "lxml")
+        dates = json_ld_dates(soup, URL)
         out = []
         for container in soup.select("div.property-container[id]"):
             link = container.select_one("h3.property-title a")
@@ -39,8 +43,10 @@ class WgEg(BaseScraper):
                 url=link["href"],
                 title=title,
                 price=data_value("kaltmiete"),
+                warm_rent_eur=parse_euro_amount(data_value("warmmiete")),
                 rooms=parse_rooms(data_value("zimmer")) or None,
                 size=data_value("wohnflaeche"),
                 address=subtitle,
+                published_at=publication_date(container, link["href"], dates),
             ))
-        return out
+        return newest_first(out)

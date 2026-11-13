@@ -1,8 +1,8 @@
 # ============================================================
-#  Göttingen Wohnungsbot — Konfiguration
+#  Germany Wohnungsbot — Konfiguration
 # ============================================================
 
-city: "Göttingen"
+city: "Göttingen"   # default; SEARCH_CITY in .env overrides (e.g. Berlin)
 
 filters:
   # Rooms + postal codes are normally set by `python -m bot.wizard`
@@ -11,11 +11,12 @@ filters:
   #
   # Deutsche Zählweise: das Wohnzimmer zählt als Zimmer mit.
   # "2 Zimmer + Wohnzimmer + Küche + Bad" = eine 3-Zimmer-Wohnung.
-  min_rooms: 3.0
-  max_rooms: 3.5
+  min_rooms: 1.0
+  max_rooms: 2.0
   postal_codes: []          # e.g. ["37073", "37083"] — limit to these Göttingen PLZ; [] = all
-  max_rent_cold: null       # e.g. 900 (€ Kaltmiete). null = no cap
+  max_warm_rent_eur: 600    # Warmmiete ceiling; .env SEARCH_MAX_WARM_RENT_EUR overrides; 0/null = no cap
   min_size_sqm: null        # e.g. 60. null = any
+  max_listing_age_days: 7   # rolling age limit; 0 = any; undated listings (e.g. Immowelt) still alert as new
   include_unknown_rooms: true   # still notify for ads with no room count (link only)
 
 poll_interval_seconds: 300            # other platforms: search every 5 minutes
@@ -23,7 +24,8 @@ kleinanzeigen_interval_seconds: 5     # Kleinanzeigen: scan this often (link-onl
                                       # 5s ≈ within 5s of an ad appearing. Aggressive: if the IP
                                       # gets rate-limited the bot auto-backs-off, then recovers.
                                       # Raise to 10–15 if you see frequent back-off warnings.
-headless: true                        # no browser needed at all in link-only mode
+headless: true                        # no browser needed while immoscout24 is off. Set false if you
+                                      # enable immoscout24 (its bot-wall blocks hidden browsers).
 
 # enabled:      search this platform
 # auto_contact: auto-send the German message. OFF everywhere — Kleinanzeigen's login
@@ -32,7 +34,7 @@ headless: true                        # no browser needed at all in link-only mo
 platforms:
   kleinanzeigen:    { enabled: true,  auto_contact: false }
   immowelt:         { enabled: true,  auto_contact: false }
-  immoscout24:      { enabled: false, auto_contact: false }
+  immoscout24:      { enabled: false, auto_contact: false }   # to use: enable, set headless: false, run ./login.sh immoscout24
   wg_gesucht:       { enabled: true,  auto_contact: false }
   volksheimstaette: { enabled: true,  auto_contact: false }
   wg_eg:            { enabled: true,  auto_contact: false }

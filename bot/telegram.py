@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import html
 
 import httpx
 
 from .config import env
+from .dates import BERLIN
 from .models import Listing
 
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -25,6 +28,10 @@ class Telegram:
             timeout=30,
         )
         r.raise_for_status()
+        payload = r.json()
+        if payload.get("ok") is not True:
+            raise RuntimeError("Telegram did not confirm message delivery.")
+        return payload.get("result")
 
     def send_listing(self, l: Listing, contact_status: str | None = None):
         rooms = f"{l.rooms:g}" if l.rooms is not None else "unknown"
@@ -35,6 +42,10 @@ class Telegram:
             f"🚪 Rooms: {rooms}",
             f"📐 {html.escape(l.size)}" if l.size else None,
             f"💶 {html.escape(l.price)}" if l.price else None,
+            (f"💶 Warmmiete: {l.warm_rent_eur:.2f} €" if l.warm_rent_eur is not None else
+             "⚠️ Warmmiete not confirmed — the price shown may be Kaltmiete, check the ad"),
+            (f"🗓 Listed: {l.published_at.astimezone(BERLIN):%d.%m.%Y}" if l.published_at else
+             "🗓 Listed: date not shown (new to the bot)"),
             f"🔗 {l.url}",
         ]
         if contact_status:

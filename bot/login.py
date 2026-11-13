@@ -8,18 +8,53 @@ Mensch sind" checkbox and finish logging in. The session is saved in
 data/browser-profile and reused by the bot (also headless) for auto-messaging.
 Re-run whenever the session expires.
 
+ImmoScout24 shows an "Ich bin kein Roboter" captcha to automated browsers:
+
+    python -m bot.login immoscout24
+
+opens the Göttingen search in the same Chrome profile so YOU can solve it once;
+the bot then reuses that cookie. Re-run when the bot reports ImmoScout24 failing.
+
 (The other platforms are notify-only and need no login.)
 """
 
+import sys
+
+
 from .browser import Browser
-from .config import kleinanzeigen_credentials
+from .config import kleinanzeigen_credentials, load_config
 from .klein_login import _accept_cookies, fill_credentials, is_logged_in
 
 HOME = "https://www.kleinanzeigen.de/"
 LOGIN = "https://www.kleinanzeigen.de/m-einloggen.html"
 
 
+def immoscout_main():
+    from .scrapers.immoscout24 import ImmoScout24
+
+    url = ImmoScout24(load_config()).search_url()
+    print("A Chrome window will open on the ImmoScout24 search.")
+    print("  1. If 'Ich bin kein Roboter' appears, solve it (and accept cookies).")
+    print("  2. Wait until the apartment list is visible, then come back here and press Enter.\n")
+    with Browser(headless=False) as browser:
+        page = browser.page()
+        try:
+            page.goto(url, wait_until="domcontentloaded")
+        except Exception as e:
+            print(f"  ! Could not open the page ({e}). Navigate to {url} in the window.")
+        input("When you see the apartment list: press Enter to save and close... ")
+        try:
+            ok = page.query_selector('a[href*="/expose/"]') is not None
+        except Exception:
+            ok = False
+    print("✓ ImmoScout24 unlocked — the bot will reuse this session." if ok
+          else "⚠️ No listings were visible. If the bot keeps reporting ImmoScout24 failing, run this again.")
+
+
 def main():
+    if any(arg.lower() in ("immoscout24", "immoscout", "is24") for arg in sys.argv[1:]):
+        immoscout_main()
+        return
     email, password = kleinanzeigen_credentials()
     if not email:
         print("No Kleinanzeigen credentials found. Run `python -m bot.credentials` first.")
